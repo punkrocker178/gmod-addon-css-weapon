@@ -1,0 +1,6 @@
+"AddonInfo"
+{
+	"name"		"CS:Source Weapons"
+	"author"	"punkrocker178"
+	"info"		"Counter-Strike: Source guns addon with the ported damage and fire logic from CSS game files."
+}
