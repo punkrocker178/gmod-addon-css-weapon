@@ -17,6 +17,12 @@ SWEP.IsCSSWeapon = true
 SWEP.Recoil = false
 SWEP.SprayPattern = { "none" }
 
+-- css_weapon_base defaults these on, and a nil field is filled from that parent.
+-- false stays put. Zoom guns replace them at registration.
+SWEP.ScopeLevels = false
+SWEP.ScopeDrawOverlay = false
+SWEP.MaxScopingLevel = 0
+
 local function blankAccuracy()
 	return {
 		Spread = 0,
@@ -154,7 +160,7 @@ function SWEP:SecondaryAttack()
 		self:ToggleBurst()
 		return
 	end
-	if not self.ScopeLevels then return end
+	if not self:Behavior().Zoom or not self.ScopeLevels then return end
 	local entering = self:GetScopingLevel() == 0 and not self:GetScopingIn()
 	if entering then
 		self:SetKeepAlt(false)

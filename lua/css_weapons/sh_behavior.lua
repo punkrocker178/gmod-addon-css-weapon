@@ -28,7 +28,7 @@ CSSWeapons.Behavior = {
 		),
 	},
 	famas = {
-		Name = "FAMAS", Hold = "ar2",
+		Name = "FAMAS", Hold = "ar2", ViewModelRightHanded = true,
 		Burst = { ShotsAfter = 2, ShotDelay = 0.075, Cycle = 0.55 },
 		Kick = kick(
 			{ 1, 0.45, 0.275, 0.05, 4, 2.5, 7 },
@@ -58,7 +58,7 @@ CSSWeapons.Behavior = {
 		),
 	},
 	galil = {
-		Name = "Galil", Hold = "ar2",
+		Name = "Galil", Hold = "ar2", ViewModelRightHanded = true,
 		Kick = kick(
 			{ 1, 0.45, 0.28, 0.045, 3.75, 3, 7 },
 			{ 1.2, 0.5, 0.23, 0.15, 5.5, 3.5, 6 },
@@ -142,7 +142,7 @@ CSSWeapons.Behavior = {
 		),
 	},
 	m249 = {
-		Name = "M249", Hold = "ar2", KickAirFirst = true,
+		Name = "M249", Hold = "ar2", KickAirFirst = true, ViewModelRightHanded = true,
 		Kick = kick(
 			{ 1.1, 0.5, 0.3, 0.06, 4, 3, 8 },
 			{ 1.8, 0.65, 0.45, 0.125, 5, 3.5, 8 },

@@ -156,25 +156,6 @@ function CSSWeapons.MaterialOf(tr)
 	return char, mods.Pen, mods.Dmg
 end
 
-local DECAL_FOR = {
-	[MAT_CONCRETE] = "Impact.Concrete",
-	[MAT_TILE] = "Impact.Concrete",
-	[MAT_METAL] = "Impact.Metal",
-	[MAT_VENT] = "Impact.Metal",
-	[MAT_GRATE] = "Impact.Metal",
-	[MAT_WOOD] = "Impact.Wood",
-	[MAT_GLASS] = "Impact.Glass",
-	[MAT_DIRT] = "Impact.Concrete",
-	[MAT_SAND] = "Impact.Concrete",
-	[MAT_GRASS] = "Impact.Concrete",
-	[MAT_FOLIAGE] = "Impact.Concrete",
-	[MAT_PLASTIC] = "Impact.Concrete",
-	[MAT_COMPUTER] = "Impact.Metal",
-	[MAT_FLESH] = "Blood",
-	[MAT_BLOODYFLESH] = "Blood",
-	[MAT_ALIENFLESH] = "Blood",
-}
-
 local function IsCharacter(ent)
 	if not IsValid(ent) or ent:IsWorld() then return false end
 	if ent:IsPlayer() or ent:IsNPC() or ent:IsNextBot() then return true end
@@ -206,37 +187,58 @@ if SERVER then
 	util.AddNetworkString("css_weapons_impact")
 end
 
-local function DrawImpact(pos, normal, mat, character, ent)
-	local decal = character and "Blood" or DECAL_FOR[mat] or "Impact.Concrete"
-	util.Decal(decal, pos + normal * 8, pos - normal * 8, LocalPlayer())
-	if not character then return end
-	local ed = EffectData()
-	ed:SetOrigin(pos)
-	ed:SetNormal(normal)
-	ed:SetScale(8)
-	ed:SetColor(BLOOD_COLOR_RED)
-	if IsValid(ent) then
-		ed:SetEntity(ent)
+local function BloodColor(ent)
+	if not IsCharacter(ent) then return end
+	local color = ent.GetBloodColor and ent:GetBloodColor() or BLOOD_COLOR_RED
+	if not color or color < 0 or color == BLOOD_COLOR_MECH then
+		color = BLOOD_COLOR_RED
 	end
-	util.Effect("BloodImpact", ed)
+	return color
+end
+
+local function DrawImpact(tr)
+	local ed = EffectData()
+	ed:SetOrigin(tr.HitPos)
+	ed:SetStart(tr.StartPos or tr.HitPos)
+	ed:SetNormal(tr.HitNormal or vector_origin)
+	ed:SetSurfaceProp(tr.SurfaceProps or 0)
+	ed:SetDamageType(DMG_BULLET)
+	ed:SetHitBox(tr.HitBoxBone or 0)
+	local ent = tr.Entity
+	if not IsValid(ent) then ent = game.GetWorld() end
+	ed:SetEntity(ent)
+	util.Effect("Impact", ed)
+
+	local color = BloodColor(tr.Entity)
+	if not color then return end
+	local blood = EffectData()
+	blood:SetOrigin(tr.HitPos)
+	blood:SetNormal(tr.HitNormal or vector_origin)
+	blood:SetScale(16)
+	blood:SetColor(color)
+	blood:SetEntity(tr.Entity)
+	util.Effect("BloodImpact", blood)
 end
 
 function CSSWeapons.BulletImpact(tr)
 	if not CLIENT or not IsFirstTimePredicted() then return end
 	if not tr or tr.HitSky or not tr.Hit then return end
-	DrawImpact(tr.HitPos, tr.HitNormal or vector_origin, tr.MatType, IsCharacter(tr.Entity), tr.Entity)
+	DrawImpact(tr)
 end
 
 if CLIENT then
 	net.Receive("css_weapons_impact", function()
 		local count = net.ReadUInt(6)
 		for _ = 1, count do
-			local pos = net.ReadVector()
-			local normal = net.ReadVector()
-			local mat = net.ReadUInt(8)
-			local character = net.ReadBool()
-			local ent = net.ReadEntity()
-			DrawImpact(pos, normal, mat, character, ent)
+			local hit = {
+				HitPos = net.ReadVector(),
+				StartPos = net.ReadVector(),
+				HitNormal = net.ReadVector(),
+				SurfaceProps = net.ReadUInt(16),
+				HitBoxBone = net.ReadUInt(8),
+				Entity = net.ReadEntity(),
+			}
+			DrawImpact(hit)
 		end
 	end)
 end
@@ -249,9 +251,10 @@ function CSSWeapons.SendImpacts(ply, impacts)
 	for i = 1, count do
 		local hit = impacts[i]
 		net.WriteVector(hit.pos)
+		net.WriteVector(hit.start)
 		net.WriteVector(hit.normal)
-		net.WriteUInt(bit.band(hit.mat or 0, 255), 8)
-		net.WriteBool(hit.character and true or false)
+		net.WriteUInt(bit.band(hit.surface or 0, 65535), 16)
+		net.WriteUInt(bit.band(hit.hitbox or 0, 255), 8)
 		net.WriteEntity(IsValid(hit.ent) and hit.ent or Entity(0))
 	end
 	-- The shooter already drew this from their predicted trace.
@@ -271,9 +274,10 @@ local function NoteImpact(impacts, tr)
 	local ent = tr.Entity
 	impacts[#impacts + 1] = {
 		pos = tr.HitPos,
+		start = tr.StartPos or tr.HitPos,
 		normal = tr.HitNormal or vector_origin,
-		mat = tr.MatType or 0,
-		character = IsCharacter(ent),
+		surface = tr.SurfaceProps or 0,
+		hitbox = tr.HitBoxBone or 0,
 		ent = IsValid(ent) and ent or nil,
 	}
 end

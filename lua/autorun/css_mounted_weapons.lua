@@ -85,6 +85,7 @@ hook.Add("Initialize", "CSSMountedWeaponsRegister", function()
 		swep.ViewModel = CSS_Viewmodel(stats.viewmodel)
 		swep.WorldModel = Model(stats.playermodel)
 		swep.UseHands = CSS_UsingArms()
+		swep.ViewModelRightHanded = behavior.ViewModelRightHanded or false
 		swep.HoldType = behavior.Hold or "ar2"
 		swep.IconOverride = stats.Icon
 		swep.IconLetter = IconLetter[id] or "b"
